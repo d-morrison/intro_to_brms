@@ -8,7 +8,7 @@ format: html
 We are going to run through an example using orange dataset from R. For this example, I am going to load `tidyverse` and `brms`. 
 
 ```{r set up}
-#| eval: false
+#| eval: true
 library(tidyverse)
 library(brms)
 ```
@@ -16,7 +16,7 @@ library(brms)
 We also need to load in the actual dataset, which in this case is built into R. 
 
 ```{r load data}
-#| eval: false
+#| eval: true
 data(Orange)
 ```
 
@@ -27,7 +27,7 @@ Let's walk through the steps.
 ## Pick an initial model 
 
 ```{r model}
-#| eval: false
+#| eval: true
 ## Explore shape of our data 
 ggplot(Orange, aes(circumference)) + 
   geom_histogram()
@@ -35,15 +35,20 @@ ggplot(Orange, aes(circumference)) +
 ggplot(Orange, aes(age, circumference)) + 
   geom_smooth()
 
+ggplot(Orange, aes(age, circumference)) + 
+  geom_smooth() +
+  geom_point() +
+  facet_wrap(~Tree)
+
 ## Pick a model 
 set.seed(1992)
-m1 <- brm(circumference ~  age, data = Orange) 
+m1 <- brm(circumference ~  age, data = Orange)
 ```
 
 ## Validate computation
 
 ```{r validate}
-#| eval: false
+#| eval: true
 summary(m1)
 ```
 
@@ -57,15 +62,16 @@ Sigma (family-specific parameter) tells us the variability in the response that 
 Let's now make our model a little more complicated. The second question we are interested in exploring is tree-level differences. 
 
 ```{r modify model}
-#| eval: false
+#| eval: true
 set.seed(1992)
-m2 <- brm(circumference ~ age + (1|Tree), 
-                          data = Orange,
-                          warmup = 1000, #burn in period
-                          iter = 2000, # actual samples
-                          chains = 4,
-                          prior = c(prior(normal(0,1), class = b), # specify your mean and variance, weakly informative prior
-                                    prior(normal(0,1), class = Intercept)))
+m2 <- brm(
+  circumference ~ age + (1|Tree), 
+  data = Orange,
+  warmup = 1000, #burn in period
+  iter = 2000, # actual samples
+  chains = 4,
+  prior = c(prior(normal(0,1), class = b), # specify your mean and variance, weakly informative prior
+            prior(normal(0,1), class = Intercept)))
 
 ## Assess model 
 summary(m2)
@@ -77,6 +83,8 @@ pp_check(m2, type = "stat", stat = 'median', nsamples = 100) # calc median of th
 pp_check(m2,type = "intervals_grouped", group = "Tree") #grouped by Tree
 
 ## Trace plot
+plot(m2)
+## 
 mcmc_plot(m2) 
 
 ## Conditional effects
@@ -89,6 +97,6 @@ Again, model convergence and sampling efficiency look good. The estimate & error
 Lastly, let's compare our models 
 
 ```{r compare models}
-#| eval: false
+#| eval: true
 loo_compare(loo(m1), loo(m2))
 ```
